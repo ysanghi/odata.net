@@ -1155,7 +1155,8 @@ namespace Microsoft.OData.JsonLight
 
             ODataResourceMetadataBuilder builder =
                 this.MetadataContext.GetResourceMetadataBuilderForReader(resourceState,
-                    this.JsonLightInputContext.ODataSimplifiedOptions.EnableReadingKeyAsSegment);
+                    this.JsonLightInputContext.ODataSimplifiedOptions.EnableReadingKeyAsSegment,
+                    /*isDelta*/ false);
             mediaResource.SetMetadataBuilder(builder, /*propertyName*/ null);
             resource.MediaResource = mediaResource;
         }
@@ -1237,6 +1238,12 @@ namespace Microsoft.OData.JsonLight
                         throw new ODataException(ODataErrorStrings.ODataJsonLightResourceDeserializer_StreamPropertyWithValue(propertyName));
                     }
 
+                    var derivedTypeConstrants = this.JsonLightInputContext.Model.GetDerivedTypeConstraints(edmProperty);
+                    if (derivedTypeConstrants != null)
+                    {
+                        resourceState.PropertyAndAnnotationCollector.SetDerivedTypeValidator(propertyName, new DerivedTypeValidator(propertyTypeReference.Definition, derivedTypeConstrants, "property", propertyName));
+                    }
+
                     // NOTE: we currently do not check whether the property should be skipped
                     //       here because this can only happen for navigation properties and open properties.
                     this.ReadEntryDataProperty(resourceState, edmProperty, ValidateDataPropertyTypeNameAnnotation(resourceState.PropertyAndAnnotationCollector, propertyName));
@@ -1283,7 +1290,7 @@ namespace Microsoft.OData.JsonLight
                 /*collectionValidator*/ null,
                 nullValueReadBehaviorKind == ODataNullValueBehaviorKind.Default,
                 /*isTopLevelPropertyValue*/ false,
-                /*insideComplexValue*/ false,
+                /*insideResourceValue*/ false,
                 edmProperty.Name);
 
             if (nullValueReadBehaviorKind != ODataNullValueBehaviorKind.IgnoreValue || propertyValue != null)
@@ -1324,9 +1331,9 @@ namespace Microsoft.OData.JsonLight
             }
 
             object propertyValue = null;
-            bool insideComplexValue = false;
+            bool insideResourceValue = false;
             string outerPayloadTypeName = ValidateDataPropertyTypeNameAnnotation(resourceState.PropertyAndAnnotationCollector, propertyName);
-            string payloadTypeName = TryReadOrPeekPayloadType(resourceState.PropertyAndAnnotationCollector, propertyName, insideComplexValue);
+            string payloadTypeName = TryReadOrPeekPayloadType(resourceState.PropertyAndAnnotationCollector, propertyName, insideResourceValue);
             EdmTypeKind payloadTypeKind;
             IEdmType payloadType = ReaderValidationUtils.ResolvePayloadTypeName(
                 this.Model,
@@ -1391,7 +1398,7 @@ namespace Microsoft.OData.JsonLight
                     /*collectionValidator*/ null,
                     /*validateNullValue*/ true,
                     /*isTopLevelPropertyValue*/ false,
-                    /*insideComplexValue*/ false,
+                    /*insideResourceValue*/ false,
                     propertyName,
                     /*isDynamicProperty*/true);
             }
@@ -1573,7 +1580,8 @@ namespace Microsoft.OData.JsonLight
 
             ODataResourceMetadataBuilder builder =
                 this.MetadataContext.GetResourceMetadataBuilderForReader(resourceState,
-                    this.JsonLightInputContext.ODataSimplifiedOptions.EnableReadingKeyAsSegment);
+                    this.JsonLightInputContext.ODataSimplifiedOptions.EnableReadingKeyAsSegment,
+                    /*isDelta*/ false);
 
             // Note that we set the metadata builder even when streamProperty is null, which is the case when the stream property is undeclared.
             // For undeclared stream properties, we will apply conventional metadata evaluation just as declared stream properties.
@@ -1765,7 +1773,8 @@ namespace Microsoft.OData.JsonLight
         {
             ODataResourceMetadataBuilder builder =
                 this.MetadataContext.GetResourceMetadataBuilderForReader(resourceState,
-                    this.JsonLightInputContext.ODataSimplifiedOptions.EnableReadingKeyAsSegment);
+                    this.JsonLightInputContext.ODataSimplifiedOptions.EnableReadingKeyAsSegment,
+                    /*isDelta*/ false);
             operation.SetMetadataBuilder(builder, this.ContextUriParseResult.MetadataDocumentUri);
         }
 

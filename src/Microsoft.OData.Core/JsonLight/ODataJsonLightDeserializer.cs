@@ -254,7 +254,7 @@ namespace Microsoft.OData.JsonLight
                     contextUriAnnotationValue,
                     payloadKind,
                     this.MessageReaderSettings.ClientCustomTypeResolver,
-                    this.JsonLightInputContext.ReadingResponse,
+                    this.JsonLightInputContext.ReadingResponse || payloadKind == ODataPayloadKind.Delta,
                     this.JsonLightInputContext.MessageReaderSettings.ThrowIfTypeConflictsWithMetadata);
             }
 
@@ -539,6 +539,11 @@ namespace Microsoft.OData.JsonLight
                 }
 
                 throw new ODataException(Strings.ODataJsonLightDeserializer_ContextLinkNotFoundAsFirstProperty);
+            }
+
+            if (propertyAndAnnotationCollector != null)
+            {
+                propertyAndAnnotationCollector.MarkPropertyAsProcessed(propertyName);
             }
 
             // Read over the property name

@@ -340,6 +340,12 @@ namespace Microsoft.OData
                 return enumValue.TypeName;
             }
 
+            var resourceValue = value as ODataResourceValue;
+            if (resourceValue != null)
+            {
+                return resourceValue.TypeName;
+            }
+
             var untypedValue = value as ODataUntypedValue;
             if (untypedValue != null)
             {
@@ -401,7 +407,6 @@ namespace Microsoft.OData
         /// <returns>The generated expand string.</returns>
         private static string ProcessSubExpand(string expandNode, string subExpand)
         {
-
             return expandNode + ODataConstants.ContextUriProjectionStart + subExpand + ODataConstants.ContextUriProjectionEnd;
         }
 
@@ -415,7 +420,6 @@ namespace Microsoft.OData
 
             if (selectList.Any())
             {
-
                 currentExpandClause += String.Join(ODataConstants.ContextUriProjectionPropertySeparator, selectList.ToArray());
             }
 

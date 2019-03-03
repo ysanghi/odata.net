@@ -418,6 +418,11 @@ namespace Microsoft.OData
                 {
                     throw new ODataException(Strings.ValidationUtils_IncompatibleType(payloadTypeName, expectedTypeReference.FullName()));
                 }
+
+                if (expectedTypeReference.PrimitiveKind() == EdmPrimitiveTypeKind.PrimitiveType)
+                {
+                    return payloadType.ToTypeReference(expectedTypeReference.IsNullable);
+                }
             }
 
             // Read using the expected type.
@@ -579,10 +584,6 @@ namespace Microsoft.OData
             }
 
             Debug.Assert(contextUriParseResult != null, "contextUriParseResult != null");
-            Debug.Assert(
-                contextUriParseResult.Path != null && contextUriParseResult.Path.IsUndeclared() ||
-                contextUriParseResult.NavigationSource != null || (contextUriParseResult.EdmType != null && contextUriParseResult.EdmType is IEdmStructuredType),
-                "contextUriParseResult.Path != null && contextUriParseResult.Path.IsUndeclared() || contextUriParseResult.NavigationSource != null || (contextUriParseResult.EdmType != null && contextUriParseResult.EdmType is IEdmStructuredType)");
 
             // Set the navigation source name or make sure the navigation source names match.
             if (scope.NavigationSource == null)

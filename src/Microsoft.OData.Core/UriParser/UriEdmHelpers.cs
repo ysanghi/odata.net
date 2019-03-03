@@ -169,5 +169,18 @@ namespace Microsoft.OData.UriParser
         {
             return bindingType == null || bindingType.IsEntityOrEntityCollectionType() || bindingType.IsODataComplexTypeKind();
         }
+
+        /// <summary>
+        /// Wraps call to FindTypeFromModel for an Enum type.
+        /// </summary>
+        /// <param name="model">the model to search</param>
+        /// <param name="qualifiedName">the name to find within the model</param>
+        /// <param name="resolver">ODataUriResolver</param>
+        /// <returns>a type reference to the enum type, or null if no such type exists.</returns>
+        internal static IEdmEnumType FindEnumTypeFromModel(IEdmModel model, string qualifiedName, ODataUriResolver resolver)
+        {
+            IEdmEnumType enumType = FindTypeFromModel(model, qualifiedName, resolver ?? ODataUriResolver.GetUriResolver(null)) as IEdmEnumType;
+            return enumType;
+        }
     }
 }

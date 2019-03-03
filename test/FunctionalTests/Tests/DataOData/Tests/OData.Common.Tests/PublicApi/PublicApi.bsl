@@ -1098,6 +1098,7 @@ public abstract class Microsoft.OData.Edm.EdmLocation {
 
 public abstract class Microsoft.OData.Edm.EdmModelBase : Microsoft.OData.Edm.EdmElement, IEdmElement, IEdmModel {
 	protected EdmModelBase (System.Collections.Generic.IEnumerable`1[[Microsoft.OData.Edm.IEdmModel]] referencedModels, Microsoft.OData.Edm.Vocabularies.IEdmDirectValueAnnotationsManager annotationsManager)
+	protected EdmModelBase (System.Collections.Generic.IEnumerable`1[[Microsoft.OData.Edm.IEdmModel]] referencedModels, Microsoft.OData.Edm.Vocabularies.IEdmDirectValueAnnotationsManager annotationsManager, bool includeDefaultVocabularies)
 
 	System.Collections.Generic.IEnumerable`1[[System.String]] DeclaredNamespaces  { public abstract get; }
 	Microsoft.OData.Edm.Vocabularies.IEdmDirectValueAnnotationsManager DirectValueAnnotationsManager  { public virtual get; }
@@ -1935,6 +1936,16 @@ public sealed class Microsoft.OData.Edm.ExtensionMethods {
 	[
 	ExtensionAttribute(),
 	]
+	public static System.Collections.Generic.IEnumerable`1[[System.String]] GetDerivedTypeConstraints (Microsoft.OData.Edm.IEdmModel model, Microsoft.OData.Edm.IEdmNavigationSource navigationSource)
+
+	[
+	ExtensionAttribute(),
+	]
+	public static System.Collections.Generic.IEnumerable`1[[System.String]] GetDerivedTypeConstraints (Microsoft.OData.Edm.IEdmModel model, Microsoft.OData.Edm.Vocabularies.IEdmVocabularyAnnotatable target)
+
+	[
+	ExtensionAttribute(),
+	]
 	public static string GetDescriptionAnnotation (Microsoft.OData.Edm.IEdmModel model, Microsoft.OData.Edm.Vocabularies.IEdmVocabularyAnnotatable target)
 
 	[
@@ -2617,6 +2628,7 @@ public class Microsoft.OData.Edm.EdmIncludeAnnotations : IEdmIncludeAnnotations 
 
 public class Microsoft.OData.Edm.EdmModel : Microsoft.OData.Edm.EdmModelBase, IEdmElement, IEdmModel {
 	public EdmModel ()
+	public EdmModel (bool includeDefaultVocabularies)
 
 	System.Collections.Generic.IEnumerable`1[[System.String]] DeclaredNamespaces  { public virtual get; }
 	System.Collections.Generic.IEnumerable`1[[Microsoft.OData.Edm.IEdmSchemaElement]] SchemaElements  { public virtual get; }
@@ -2826,6 +2838,7 @@ public sealed class Microsoft.OData.Edm.Csdl.SchemaReader {
 	public static bool TryParse (System.Collections.Generic.IEnumerable`1[[System.Xml.XmlReader]] readers, out Microsoft.OData.Edm.IEdmModel& model, out System.Collections.Generic.IEnumerable`1[[Microsoft.OData.Edm.Validation.EdmError]]& errors)
 	public static bool TryParse (System.Collections.Generic.IEnumerable`1[[System.Xml.XmlReader]] readers, Microsoft.OData.Edm.IEdmModel reference, out Microsoft.OData.Edm.IEdmModel& model, out System.Collections.Generic.IEnumerable`1[[Microsoft.OData.Edm.Validation.EdmError]]& errors)
 	public static bool TryParse (System.Collections.Generic.IEnumerable`1[[System.Xml.XmlReader]] readers, System.Collections.Generic.IEnumerable`1[[Microsoft.OData.Edm.IEdmModel]] references, out Microsoft.OData.Edm.IEdmModel& model, out System.Collections.Generic.IEnumerable`1[[Microsoft.OData.Edm.Validation.EdmError]]& errors)
+	public static bool TryParse (System.Collections.Generic.IEnumerable`1[[System.Xml.XmlReader]] readers, System.Collections.Generic.IEnumerable`1[[Microsoft.OData.Edm.IEdmModel]] references, bool includeDefaultVocabularies, out Microsoft.OData.Edm.IEdmModel& model, out System.Collections.Generic.IEnumerable`1[[Microsoft.OData.Edm.Validation.EdmError]]& errors)
 }
 
 [
@@ -2937,6 +2950,7 @@ public class Microsoft.OData.Edm.Csdl.CsdlReader {
 	public static bool TryParse (System.Xml.XmlReader reader, System.Collections.Generic.IEnumerable`1[[Microsoft.OData.Edm.IEdmModel]] references, out Microsoft.OData.Edm.IEdmModel& model, out System.Collections.Generic.IEnumerable`1[[Microsoft.OData.Edm.Validation.EdmError]]& errors)
 	public static bool TryParse (System.Xml.XmlReader reader, System.Func`2[[System.Uri],[System.Xml.XmlReader]] getReferencedModelReaderFunc, out Microsoft.OData.Edm.IEdmModel& model, out System.Collections.Generic.IEnumerable`1[[Microsoft.OData.Edm.Validation.EdmError]]& errors)
 	public static bool TryParse (System.Xml.XmlReader reader, System.Collections.Generic.IEnumerable`1[[Microsoft.OData.Edm.IEdmModel]] references, Microsoft.OData.Edm.Csdl.CsdlReaderSettings settings, out Microsoft.OData.Edm.IEdmModel& model, out System.Collections.Generic.IEnumerable`1[[Microsoft.OData.Edm.Validation.EdmError]]& errors)
+	public static bool TryParse (System.Xml.XmlReader reader, System.Collections.Generic.IEnumerable`1[[Microsoft.OData.Edm.IEdmModel]] references, bool includeDefaultVocabularies, out Microsoft.OData.Edm.IEdmModel& model, out System.Collections.Generic.IEnumerable`1[[Microsoft.OData.Edm.Validation.EdmError]]& errors)
 }
 
 public class Microsoft.OData.Edm.Csdl.CsdlWriter {
@@ -3179,6 +3193,8 @@ public enum Microsoft.OData.Edm.Validation.EdmErrorCode : int {
 	UnresolvedNavigationPropertyBindingPath = 378
 	UnresolvedNavigationPropertyPartnerPath = 377
 	UnresolvedReferenceUriInEdmxReference = 374
+	UrlEscapeFunctionMustBeBoundFunction = 155
+	UrlEscapeFunctionMustHaveOnlyOneEdmStringParameter = 156
 	XmlError = 5
 }
 
@@ -3274,6 +3290,8 @@ public sealed class Microsoft.OData.Edm.Validation.ValidationRules {
 	public static readonly Microsoft.OData.Edm.Validation.ValidationRule`1[[Microsoft.OData.Edm.Vocabularies.IEdmApplyExpression]] FunctionApplicationExpressionParametersMatchAppliedFunction = Microsoft.OData.Edm.Validation.ValidationRule`1[Microsoft.OData.Edm.Vocabularies.IEdmApplyExpression]
 	public static readonly Microsoft.OData.Edm.Validation.ValidationRule`1[[Microsoft.OData.Edm.IEdmFunctionImport]] FunctionImportWithParameterShouldNotBeIncludedInServiceDocument = Microsoft.OData.Edm.Validation.ValidationRule`1[Microsoft.OData.Edm.IEdmFunctionImport]
 	public static readonly Microsoft.OData.Edm.Validation.ValidationRule`1[[Microsoft.OData.Edm.IEdmFunction]] FunctionMustHaveReturnType = Microsoft.OData.Edm.Validation.ValidationRule`1[Microsoft.OData.Edm.IEdmFunction]
+	public static readonly Microsoft.OData.Edm.Validation.ValidationRule`1[[Microsoft.OData.Edm.IEdmFunction]] FunctionWithUrlEscapeFunctionMustBeBound = Microsoft.OData.Edm.Validation.ValidationRule`1[Microsoft.OData.Edm.IEdmFunction]
+	public static readonly Microsoft.OData.Edm.Validation.ValidationRule`1[[Microsoft.OData.Edm.IEdmFunction]] FunctionWithUrlEscapeFunctionMustHaveOneStringParameter = Microsoft.OData.Edm.Validation.ValidationRule`1[Microsoft.OData.Edm.IEdmFunction]
 	public static readonly Microsoft.OData.Edm.Validation.ValidationRule`1[[Microsoft.OData.Edm.Vocabularies.IEdmIfExpression]] IfExpressionAssertCorrectTestType = Microsoft.OData.Edm.Validation.ValidationRule`1[Microsoft.OData.Edm.Vocabularies.IEdmIfExpression]
 	public static readonly Microsoft.OData.Edm.Validation.ValidationRule`1[[Microsoft.OData.Edm.Vocabularies.IEdmDirectValueAnnotation]] ImmediateValueAnnotationElementAnnotationHasNameAndNamespace = Microsoft.OData.Edm.Validation.ValidationRule`1[Microsoft.OData.Edm.Vocabularies.IEdmDirectValueAnnotation]
 	public static readonly Microsoft.OData.Edm.Validation.ValidationRule`1[[Microsoft.OData.Edm.Vocabularies.IEdmDirectValueAnnotation]] ImmediateValueAnnotationElementAnnotationIsValid = Microsoft.OData.Edm.Validation.ValidationRule`1[Microsoft.OData.Edm.Vocabularies.IEdmDirectValueAnnotation]
@@ -4024,7 +4042,9 @@ public sealed class Microsoft.OData.Edm.Vocabularies.V1.CoreVocabularyModel {
 }
 
 public sealed class Microsoft.OData.Edm.Vocabularies.V1.ValidationVocabularyModel {
+	public static readonly Microsoft.OData.Edm.Vocabularies.IEdmTerm DerivedTypeConstraintTerm = Microsoft.OData.Edm.Csdl.CsdlSemantics.CsdlSemanticsTerm
 	public static readonly Microsoft.OData.Edm.IEdmModel Instance = Microsoft.OData.Edm.Csdl.CsdlSemantics.CsdlSemanticsModel
+	public static readonly string Namespace = "Org.OData.Validation.V1"
 }
 
 public sealed class Microsoft.OData.Edm.Vocabularies.Community.V1.AlternateKeysVocabularyConstants {
@@ -5214,6 +5234,7 @@ public sealed class Microsoft.OData.ODataMessageReaderSettings {
 	public ODataMessageReaderSettings ()
 	public ODataMessageReaderSettings (Microsoft.OData.ODataVersion odataVersion)
 
+	Microsoft.OData.Buffers.ICharArrayPool ArrayPool  { public get; public set; }
 	System.Uri BaseUri  { public get; public set; }
 	System.Func`3[[Microsoft.OData.Edm.IEdmType],[System.String],[Microsoft.OData.Edm.IEdmType]] ClientCustomTypeResolver  { public get; public set; }
 	bool EnableCharactersCheck  { public get; public set; }
@@ -5387,6 +5408,14 @@ public sealed class Microsoft.OData.ODataResourceSet : Microsoft.OData.ODataReso
 	public void AddFunction (Microsoft.OData.ODataFunction function)
 }
 
+public sealed class Microsoft.OData.ODataResourceValue : Microsoft.OData.ODataValue {
+	public ODataResourceValue ()
+
+	System.Collections.Generic.ICollection`1[[Microsoft.OData.ODataInstanceAnnotation]] InstanceAnnotations  { public get; public set; }
+	System.Collections.Generic.IEnumerable`1[[Microsoft.OData.ODataProperty]] Properties  { public get; public set; }
+	string TypeName  { public get; public set; }
+}
+
 public sealed class Microsoft.OData.ODataServiceDocument : Microsoft.OData.ODataAnnotatable {
 	public ODataServiceDocument ()
 
@@ -5461,6 +5490,11 @@ public sealed class Microsoft.OData.ODataUri {
 public sealed class Microsoft.OData.ODataUrlKeyDelimiter {
 	Microsoft.OData.ODataUrlKeyDelimiter Parentheses  { public static get; }
 	Microsoft.OData.ODataUrlKeyDelimiter Slash  { public static get; }
+}
+
+public interface Microsoft.OData.Buffers.ICharArrayPool {
+	char[] Rent (int minSize)
+	void Return (char[] array)
 }
 
 public enum Microsoft.OData.Json.JsonNodeType : int {
@@ -7083,6 +7117,7 @@ public enum Microsoft.OData.UriParser.Aggregation.AggregationMethod : int {
 public enum Microsoft.OData.UriParser.Aggregation.TransformationNodeKind : int {
 	Aggregate = 0
 	Compute = 3
+	Expand = 4
 	Filter = 2
 	GroupBy = 1
 }
@@ -7201,6 +7236,13 @@ public sealed class Microsoft.OData.UriParser.Aggregation.EntitySetAggregateToke
 	public virtual T Accept (ISyntacticTreeVisitor`1 visitor)
 	public static Microsoft.OData.UriParser.Aggregation.EntitySetAggregateToken Merge (Microsoft.OData.UriParser.Aggregation.EntitySetAggregateToken token1, Microsoft.OData.UriParser.Aggregation.EntitySetAggregateToken token2)
 	public string Path ()
+}
+
+public sealed class Microsoft.OData.UriParser.Aggregation.ExpandTransformationNode : Microsoft.OData.UriParser.Aggregation.TransformationNode {
+	public ExpandTransformationNode (Microsoft.OData.UriParser.SelectExpandClause expandClause)
+
+	Microsoft.OData.UriParser.SelectExpandClause ExpandClause  { public get; }
+	Microsoft.OData.UriParser.Aggregation.TransformationNodeKind Kind  { public virtual get; }
 }
 
 public sealed class Microsoft.OData.UriParser.Aggregation.FilterTransformationNode : Microsoft.OData.UriParser.Aggregation.TransformationNode {

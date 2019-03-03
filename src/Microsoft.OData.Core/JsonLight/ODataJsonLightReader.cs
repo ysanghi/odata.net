@@ -171,6 +171,16 @@ namespace Microsoft.OData.JsonLight
 
             ResolveScopeInfoFromContextUrl();
 
+            Scope currentScope = this.CurrentScope;
+            if (this.jsonLightInputContext.Model.IsUserModel())
+            {
+                var derivedTypeConstraints = this.jsonLightInputContext.Model.GetDerivedTypeConstraints(currentScope.NavigationSource);
+                if (derivedTypeConstraints != null)
+                {
+                    currentScope.DerivedTypeValidator = new DerivedTypeValidator(currentScope.ResourceType, derivedTypeConstraints, "navigation source", currentScope.NavigationSource.Name);
+                }
+            }
+
             return this.ReadAtStartImplementationSynchronously(propertyAndAnnotationCollector);
         }
 
@@ -1014,7 +1024,8 @@ namespace Microsoft.OData.JsonLight
                 ODataResourceMetadataBuilder builder =
                     this.jsonLightResourceDeserializer.MetadataContext.GetResourceMetadataBuilderForReader(
                         this.CurrentResourceState,
-                        this.jsonLightInputContext.ODataSimplifiedOptions.EnableReadingKeyAsSegment);
+                        this.jsonLightInputContext.ODataSimplifiedOptions.EnableReadingKeyAsSegment,
+                        this.ReadingDelta);
                 if (builder != currentResource.MetadataBuilder)
                 {
                     ODataNestedResourceInfo parentNestInfo = this.ParentNestedInfo;
@@ -1740,27 +1751,24 @@ namespace Microsoft.OData.JsonLight
                         contextUriStr,
                         this.ReadingDelta ? ODataPayloadKind.Delta : ODataPayloadKind.Resource,
                         this.jsonLightResourceDeserializer.MessageReaderSettings.ClientCustomTypeResolver,
-                        this.jsonLightInputContext.ReadingResponse);
+                        this.jsonLightInputContext.ReadingResponse || this.ReadingDelta);
                     if (parseResult != null)
                     {
+                        // a top-level (deleted) resource in a delta response can come from any entity set
                         resourceKind = parseResult.DeltaKind;
-                        if (this.jsonLightInputContext.ReadingResponse)
+                        if (this.ReadingDelta && this.IsTopLevel && (resourceKind == ODataDeltaKind.Resource || resourceKind == ODataDeltaKind.DeletedEntry))
                         {
-                            // a top-level (deleted) resource in a delta response can come from any entity set
-                            if (this.ReadingDelta && this.IsTopLevel && (resourceKind == ODataDeltaKind.Resource || resourceKind == ODataDeltaKind.DeletedEntry))
+                            IEdmStructuredType parsedType = parseResult.EdmType as IEdmStructuredType;
+                            if (parsedType != null)
                             {
-                                IEdmStructuredType parsedType = parseResult.EdmType as IEdmStructuredType;
-                                if (parsedType != null)
-                                {
-                                    resourceType = parsedType;
-                                    source = parseResult.NavigationSource;
-                                }
+                                resourceType = parsedType;
+                                source = parseResult.NavigationSource;
                             }
-                            else
-                            {
-                                ReaderValidationUtils.ValidateResourceSetOrResourceContextUri(parseResult, this.CurrentScope,
-                                    false);
-                            }
+                        }
+                        else
+                        {
+                            ReaderValidationUtils.ValidateResourceSetOrResourceContextUri(parseResult, this.CurrentScope,
+                                false);
                         }
                     }
                 }
@@ -1888,6 +1896,12 @@ namespace Microsoft.OData.JsonLight
 
             // Resolve the type name
             this.ApplyResourceTypeNameFromPayload(currentResource.TypeName);
+
+            // Validate type with derived type validator if available
+            if (this.CurrentDerivedTypeValidator != null)
+            {
+                this.CurrentDerivedTypeValidator.ValidateResourceType(this.CurrentResourceType);
+            }
 
             // Validate type with resource set validator if available and not reading top-level delta resource set
             if (this.CurrentResourceSetValidator != null && !(this.ReadingDelta && this.CurrentResourceDepth == 0))
@@ -2083,7 +2097,8 @@ namespace Microsoft.OData.JsonLight
                 ODataResourceMetadataBuilder resourceMetadataBuilder =
                     this.jsonLightResourceDeserializer.MetadataContext.GetResourceMetadataBuilderForReader(
                         this.CurrentResourceState,
-                        this.jsonLightInputContext.ODataSimplifiedOptions.EnableReadingKeyAsSegment);
+                        this.jsonLightInputContext.ODataSimplifiedOptions.EnableReadingKeyAsSegment,
+                        this.ReadingDelta);
                 nestedResourceInfo.MetadataBuilder = resourceMetadataBuilder;
             }
 
@@ -2147,8 +2162,16 @@ namespace Microsoft.OData.JsonLight
 
             odataUri.Path = odataPath;
 
-            this.EnterScope(new JsonLightNestedResourceInfoScope(readerNestedResourceInfo, navigationSource,
-                targetResourceType, odataUri));
+            JsonLightNestedResourceInfoScope newScope = new JsonLightNestedResourceInfoScope(readerNestedResourceInfo, navigationSource,
+                targetResourceType, odataUri);
+
+            var derivedTypeConstraints = this.jsonLightInputContext.Model.GetDerivedTypeConstraints(nestedProperty);
+            if (derivedTypeConstraints != null)
+            {
+                newScope.DerivedTypeValidator = new DerivedTypeValidator(nestedProperty.Type.ToStructuredType(), derivedTypeConstraints, "nested resource", nestedProperty.Name);
+            }
+
+            this.EnterScope(newScope);
         }
 
         /// <summary>
